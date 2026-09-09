@@ -24,7 +24,7 @@ HTML, CSS e JavaScript puro. Não requer instalação nem dependências.
 
 ## Publicar no GitHub
 
-1. No GitHub, cria um repositório chamado `contaturno` e escolhe **Public**.
+1. No GitHub, cria um repositório chamado `conta-turno` e escolhe **Public**.
 2. Não seleciones a opção para criar README, `.gitignore` ou licença, porque estes ficheiros já estão na pasta.
 3. Na pasta do projeto, executa:
 
