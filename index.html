@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContaTurno</title>
+    <title>conta-turno</title>
     <style>
         body {
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -48,7 +48,7 @@
 </head>
 <body>
     <main class="container">
-        <h1 id="title-display">ContaTurno</h1>
+        <h1 id="title-display">conta-turno</h1>
         <div id="countdown">00:00:00</div>
         <div id="lunch-info" class="info-text"></div>
 
@@ -104,7 +104,7 @@
         function showInvalidLunch() {
             countdownElement.classList.remove('finished', 'lunch');
             countdownElement.textContent = '—';
-            titleDisplay.textContent = 'ContaTurno · verifica o almoço';
+            titleDisplay.textContent = 'conta-turno · verifica o almoço';
             lunchInfoElement.textContent = 'O fim do almoço tem de ser posterior ao início.';
             lunchInfoElement.classList.add('error');
             document.title = 'Horário de almoço inválido';
@@ -130,7 +130,7 @@
                 const message = 'Hora de ir embora! 🎉';
                 countdownElement.textContent = message;
                 countdownElement.classList.add('finished');
-                titleDisplay.textContent = 'ContaTurno · trabalho concluído!';
+                titleDisplay.textContent = 'conta-turno · trabalho concluído!';
                 document.title = message;
                 return;
             }
@@ -139,7 +139,7 @@
                 const message = 'Em pausa para almoço 🥪';
                 countdownElement.textContent = message;
                 countdownElement.classList.add('lunch');
-                titleDisplay.textContent = 'ContaTurno · intervalo';
+                titleDisplay.textContent = 'conta-turno · intervalo';
                 document.title = message;
                 return;
             }
@@ -148,7 +148,7 @@
             if (now < lunchStartTime) remainingWorkTime -= lunchDuration;
 
             const timeString = formatDuration(remainingWorkTime);
-            titleDisplay.textContent = `ContaTurno · saída às ${inputs.exit.value}`;
+            titleDisplay.textContent = `conta-turno · saída às ${inputs.exit.value}`;
             countdownElement.textContent = timeString;
             document.title = `⏱️ ${timeString} restantes`;
         }
