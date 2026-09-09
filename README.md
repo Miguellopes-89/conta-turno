@@ -1,4 +1,4 @@
-# ContaTurno
+# conta-turno
 
 Um contador minimalista para acompanhar o tempo de trabalho até à hora de saída.
 
@@ -31,9 +31,9 @@ HTML, CSS e JavaScript puro. Não requer instalação nem dependências.
 ```powershell
 git init
 git add .
-git commit -m "Primeira versão do ContaTurno"
+git commit -m "Primeira versão do conta-turno"
 git branch -M main
-git remote add origin https://github.com/TEU-UTILIZADOR/contaturno.git
+git remote add origin https://github.com/TEU-UTILIZADOR/conta-turno.git
 git push -u origin main
 ```
 
