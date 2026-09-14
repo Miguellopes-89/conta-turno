@@ -11,6 +11,7 @@ Um contador minimalista para acompanhar o tempo de trabalho até à hora de saí
 - Permite alterar o início e o fim do intervalo de almoço.
 - Guarda os horários no navegador, para não teres de os definir todos os dias.
 - Indica claramente quando estás em pausa e quando é hora de sair.
+- Apresenta os dias da semana, evidenciando o dia atual.
 
 ## Como utilizar
 
@@ -21,23 +22,6 @@ Um contador minimalista para acompanhar o tempo de trabalho até à hora de saí
 ## Tecnologias
 
 HTML, CSS e JavaScript puro. Não requer instalação nem dependências.
-
-## Publicar no GitHub
-
-1. No GitHub, cria um repositório chamado `conta-turno` e escolhe **Public**.
-2. Não seleciones a opção para criar README, `.gitignore` ou licença, porque estes ficheiros já estão na pasta.
-3. Na pasta do projeto, executa:
-
-```powershell
-git init
-git add .
-git commit -m "Primeira versão do conta-turno"
-git branch -M main
-git remote add origin https://github.com/TEU-UTILIZADOR/conta-turno.git
-git push -u origin main
-```
-
-Substitui `TEU-UTILIZADOR` pelo teu nome de utilizador do GitHub.
 
 ## Licença
 
