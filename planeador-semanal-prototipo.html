@@ -1,34 +1,42 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>conta-turno · Planeador semanal</title>
     <style>
-        :root { --bg:#181a1b; --text:#ececea; --muted:#8f9491; --line:#343837; --blue:#3b82f6; --blue-soft:rgba(59,130,246,.20); }
+        :root { --bg:#181a1b; --panel:#202324; --text:#ececea; --muted:#8f9491; --line:#343837; --blue:#3b82f6; --blue-soft:rgba(59,130,246,.20); }
         * { box-sizing:border-box; }
         body { margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:28px 16px; background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif; }
-        .container { width:min(94%,720px); }
-        .week-header { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-bottom:28px; }
+        .container { width:min(94%,760px); }
+        .week-header { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-bottom:24px; }
         .day { appearance:none; border:1px solid transparent; background:rgba(255,255,255,.025); color:#777d7a; padding:10px 4px; border-radius:9px; cursor:pointer; min-height:64px; transition:.15s ease; }
         .day:hover { background:rgba(255,255,255,.06); color:#aeb3b0; }
         .day .name { display:block; font-size:.70rem; line-height:1.15; }
-        .day .status { display:block; margin-top:6px; font-size:.62rem; opacity:.65; }
+        .day .status { display:block; margin-top:6px; font-size:.62rem; opacity:.75; }
         .day.current { color:#dbeafe; border-color:rgba(96,165,250,.30); background:var(--blue-soft); }
         .day.selected { box-shadow:0 0 0 2px rgba(96,165,250,.35); }
+        .day.off { opacity:.6; }
         .day .dot { width:5px; height:5px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:4px; background:#5c625f; }
         .day.current .dot { background:#60a5fa; }
         h1 { margin:0 0 4px; font-size:1.05rem; font-weight:500; }
-        .subtitle { margin:0 0 22px; color:var(--muted); font-size:.82rem; }
-        .schedule { border-top:1px solid var(--line); padding-top:22px; }
-        .selected-day { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:16px; }
+        .subtitle { margin:0 0 18px; color:var(--muted); font-size:.82rem; }
+        .panel { border-top:1px solid var(--line); padding-top:20px; }
+        .selected-day { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:18px; }
         .selected-day strong { font-size:1.2rem; font-weight:500; }
         .selected-day span { color:var(--muted); font-size:.78rem; }
+        .mode-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+        .mode { border:1px solid #3d4240; background:transparent; color:#aeb3b0; border-radius:7px; padding:8px 11px; cursor:pointer; font-size:.78rem; }
+        .mode.active { border-color:rgba(96,165,250,.4); background:var(--blue-soft); color:#dbeafe; }
         .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 28px; }
         .field label { display:block; margin-bottom:7px; color:var(--muted); font-size:.78rem; }
         input[type=time] { width:100%; padding:10px 7px; color:var(--text); background:transparent; border:0; border-bottom:1px solid #686d69; outline:none; font:inherit; font-size:1rem; }
-        .days-off { margin-top:17px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; color:var(--muted); font-size:.78rem; }
-        .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+        .note { margin-top:17px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; color:var(--muted); font-size:.78rem; line-height:1.45; }
+        .preview { margin-top:18px; padding:14px; background:var(--panel); border-radius:9px; }
+        .preview-title { color:var(--muted); font-size:.72rem; margin-bottom:7px; text-transform:uppercase; letter-spacing:.04em; }
+        .preview-main { font-size:1.35rem; font-weight:500; }
+        .preview-sub { margin-top:4px; color:var(--muted); font-size:.78rem; }
+        .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
         button.action { border:1px solid #4a504d; background:transparent; color:#d7dbd8; border-radius:7px; padding:8px 13px; cursor:pointer; }
         button.action.primary { border-color:rgba(96,165,250,.35); background:var(--blue-soft); color:#dbeafe; }
         @media (max-width:560px) {
@@ -45,36 +53,51 @@
     <nav class="week-header" aria-label="Planeamento semanal" id="weekHeader"></nav>
 
     <h1>Planeador semanal</h1>
-    <p class="subtitle">Seleciona um dia para consultar ou definir o horário desse dia.</p>
+    <p class="subtitle">O horário normal é aplicado por defeito. Aqui configuras apenas as exceções.</p>
 
-    <section class="schedule" aria-live="polite">
+    <section class="panel" aria-live="polite">
         <div class="selected-day">
             <strong id="selectedDayName">Segunda-Feira</strong>
             <span id="selectedDayHint">Hoje</span>
         </div>
 
-        <div class="grid">
+        <div class="mode-row" id="modeRow">
+            <button class="mode active" data-mode="normal">Horário normal</button>
+            <button class="mode" data-mode="exception">Horário diferente</button>
+            <button class="mode" data-mode="morning">Meio turno · manhã</button>
+            <button class="mode" data-mode="afternoon">Meio turno · tarde</button>
+            <button class="mode" data-mode="off">Folga</button>
+        </div>
+
+        <div class="grid" id="timeFields">
             <div class="field">
                 <label for="start">Início do trabalho</label>
-                <input id="start" type="time" value="09:00">
+                <input id="start" type="time" value="08:00">
             </div>
             <div class="field">
                 <label for="exit">Hora de saída</label>
                 <input id="exit" type="time" value="17:00">
             </div>
-            <div class="field">
+            <div class="field" id="lunchStartField">
                 <label for="lunchStart">Início do almoço</label>
                 <input id="lunchStart" type="time" value="12:00">
             </div>
-            <div class="field">
+            <div class="field" id="lunchEndField">
                 <label for="lunchEnd">Fim do almoço</label>
                 <input id="lunchEnd" type="time" value="13:00">
             </div>
         </div>
 
-        <div class="days-off" id="dayStatus">Exemplo de horário configurado. Nesta proposta, o domingo é tratado como dia sem horário.</div>
+        <div class="note" id="note">Horário normal: 08:00–17:00, com almoço das 12:00 às 13:00.</div>
+
+        <div class="preview">
+            <div class="preview-title">Pré-visualização do dia</div>
+            <div class="preview-main" id="previewMain">08:00 → 17:00</div>
+            <div class="preview-sub" id="previewSub">8h de trabalho · almoço 12:00–13:00</div>
+        </div>
+
         <div class="actions">
-            <button class="action" id="copyWeek">Reutilizar horário</button>
+            <button class="action" id="resetDay">Repor normal</button>
             <button class="action primary" id="saveDay">Guardar dia</button>
         </div>
     </section>
@@ -84,59 +107,111 @@
         ['Segunda-Feira',1], ['Terça-Feira',2], ['Quarta-Feira',3], ['Quinta-Feira',4],
         ['Sexta-Feira',5], ['Sábado',6], ['Domingo',0]
     ];
-    const schedules = {
-        1:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
-        2:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
-        3:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
-        4:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
-        5:{start:'09:00',exit:'16:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Saída antecipada'},
-        6:{start:'',exit:'',lunchStart:'',lunchEnd:'',status:'Sem horário definido'},
-        0:{start:'',exit:'',lunchStart:'',lunchEnd:'',status:'Dia sem horário'}
-    };
+
+    const defaultSchedule = { mode:'normal', start:'08:00', exit:'17:00', lunchStart:'12:00', lunchEnd:'13:00', status:'Normal' };
+    const schedules = Object.fromEntries(days.map(([_, id]) => [id, {...defaultSchedule}]));
+    schedules[6] = {mode:'off', start:'', exit:'', lunchStart:'', lunchEnd:'', status:'Folga'};
+    schedules[0] = {mode:'off', start:'', exit:'', lunchStart:'', lunchEnd:'', status:'Folga'};
+
     const currentDay = new Date().getDay();
-    let selectedDay = currentDay === 0 ? 1 : currentDay;
+    let selectedDay = [1,2,3,4,5].includes(currentDay) ? currentDay : 1;
+
     const header = document.getElementById('weekHeader');
     const selectedName = document.getElementById('selectedDayName');
     const selectedHint = document.getElementById('selectedDayHint');
-    const status = document.getElementById('dayStatus');
+    const note = document.getElementById('note');
+    const previewMain = document.getElementById('previewMain');
+    const previewSub = document.getElementById('previewSub');
+    const timeFields = document.getElementById('timeFields');
+    const lunchStartField = document.getElementById('lunchStartField');
+    const lunchEndField = document.getElementById('lunchEndField');
     const fields = ['start','exit','lunchStart','lunchEnd'].map(id => document.getElementById(id));
+
+    function duration(start, end) {
+        if (!start || !end) return 0;
+        const [sh,sm]=start.split(':').map(Number), [eh,em]=end.split(':').map(Number);
+        return Math.max(0,(eh*60+em)-(sh*60+sm));
+    }
+
+    function formatHours(mins) {
+        const h=Math.floor(mins/60), m=mins%60;
+        return m ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`;
+    }
 
     function renderHeader() {
         header.innerHTML='';
-        days.forEach(([name, id]) => {
+        days.forEach(([name,id])=>{
+            const data=schedules[id];
             const button=document.createElement('button');
-            button.className='day' + (id===currentDay?' current':'') + (id===selectedDay?' selected':'');
-            const hasSchedule=Boolean(schedules[id].exit);
-            button.innerHTML=`<span class="name">${name}</span><span class="status"><span class="dot"></span>${hasSchedule?schedules[id].exit:'—'}</span>`;
-            button.addEventListener('click',()=>{ selectedDay=id; loadDay(); renderHeader(); });
+            const isOff=data.mode==='off';
+            const summary=isOff?'Folga':data.exit;
+            button.className='day'+(id===currentDay?' current':'')+(id===selectedDay?' selected':'')+(isOff?' off':'');
+            button.innerHTML=`<span class="name">${name}</span><span class="status"><span class="dot"></span>${summary}</span>`;
+            button.addEventListener('click',()=>{selectedDay=id; loadDay(); renderHeader();});
             header.appendChild(button);
         });
+    }
+
+    function setMode(mode) {
+        const data=schedules[selectedDay];
+        data.mode=mode;
+        if(mode==='normal') Object.assign(data, {...defaultSchedule});
+        if(mode==='morning') Object.assign(data, {start:'08:00',exit:'12:00',lunchStart:'',lunchEnd:'',status:'Meio turno · manhã'});
+        if(mode==='afternoon') Object.assign(data, {start:'13:00',exit:'17:00',lunchStart:'',lunchEnd:'',status:'Meio turno · tarde'});
+        if(mode==='off') Object.assign(data, {start:'',exit:'',lunchStart:'',lunchEnd:'',status:'Folga'});
+        if(mode==='exception' && (data.start==='' || data.exit==='')) Object.assign(data, {start:'08:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário diferente'});
+        loadDay();
+        renderHeader();
     }
 
     function loadDay() {
         const data=schedules[selectedDay];
         selectedName.textContent=days.find(d=>d[1]===selectedDay)[0];
-        selectedHint.textContent=selectedDay===currentDay?'Hoje':(data.exit?'Horário planeado':'Sem horário');
-        fields.forEach((field,i)=>field.value=data[['start','exit','lunchStart','lunchEnd'][i]]||'');
-        status.textContent=data.status + (selectedDay===currentDay?' · dia atual':'');
+        selectedHint.textContent=selectedDay===currentDay?'Hoje':(data.mode==='off'?'Folga':'Planeado');
+        fields.forEach(field=>field.value=data[field.id]||'');
+        document.querySelectorAll('.mode').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===data.mode));
+
+        const disabled=data.mode==='off';
+        timeFields.style.display=disabled?'none':'grid';
+        lunchStartField.style.display=['morning','afternoon'].includes(data.mode)?'none':'';
+        lunchEndField.style.display=['morning','afternoon'].includes(data.mode)?'none':'';
+
+        if(disabled){
+            note.textContent='Folga: não existe período de trabalho nem intervalo de almoço.';
+            previewMain.textContent='Sem horário';
+            previewSub.textContent='Dia marcado como folga';
+            return;
+        }
+        if(data.mode==='morning'){
+            note.textContent='Meio turno de manhã: a hora das 12:00 representa o fim do dia de trabalho, não o início do almoço.';
+            previewMain.textContent=`${data.start} → ${data.exit}`;
+            previewSub.textContent=`${formatHours(duration(data.start,data.exit))} de trabalho · sem almoço`;
+            return;
+        }
+        if(data.mode==='afternoon'){
+            note.textContent='Meio turno de tarde: não existe intervalo de almoço dentro deste turno.';
+            previewMain.textContent=`${data.start} → ${data.exit}`;
+            previewSub.textContent=`${formatHours(duration(data.start,data.exit))} de trabalho · sem almoço`;
+            return;
+        }
+        note.textContent=data.mode==='normal'?'Horário normal: 08:00–17:00, com almoço das 12:00 às 13:00.':'Exceção: este dia tem um horário diferente do horário normal.';
+        previewMain.textContent=`${data.start} → ${data.exit}`;
+        previewSub.textContent=`${formatHours(duration(data.start,data.exit)-duration(data.lunchStart,data.lunchEnd))} de trabalho · almoço ${data.lunchStart}–${data.lunchEnd}`;
     }
+
+    document.querySelectorAll('.mode').forEach(btn=>btn.addEventListener('click',()=>setMode(btn.dataset.mode)));
 
     fields.forEach(field=>field.addEventListener('change',()=>{
         schedules[selectedDay][field.id]=field.value;
-        schedules[selectedDay].status=field.value?'Horário configurado':'Sem horário definido';
-        renderHeader();
+        schedules[selectedDay].mode='exception';
+        schedules[selectedDay].status='Horário diferente';
         loadDay();
+        renderHeader();
     }));
 
-    document.getElementById('copyWeek').addEventListener('click',()=>{
-        const source=schedules[selectedDay];
-        const targets=[1,2,3,4,5].filter(day=>day!==selectedDay);
-        targets.forEach(day=>schedules[day]={...source});
-        renderHeader();
-    });
-
+    document.getElementById('resetDay').addEventListener('click',()=>setMode('normal'));
     document.getElementById('saveDay').addEventListener('click',()=>{
-        status.textContent='Alterações guardadas para este dia (protótipo).';
+        note.textContent='Alterações guardadas para este dia (protótipo).';
     });
 
     renderHeader();
