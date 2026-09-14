@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>conta-turno · Planeador semanal</title>
+    <style>
+        :root { --bg:#181a1b; --text:#ececea; --muted:#8f9491; --line:#343837; --blue:#3b82f6; --blue-soft:rgba(59,130,246,.20); }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:28px 16px; background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif; }
+        .container { width:min(94%,720px); }
+        .week-header { display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-bottom:28px; }
+        .day { appearance:none; border:1px solid transparent; background:rgba(255,255,255,.025); color:#777d7a; padding:10px 4px; border-radius:9px; cursor:pointer; min-height:64px; transition:.15s ease; }
+        .day:hover { background:rgba(255,255,255,.06); color:#aeb3b0; }
+        .day .name { display:block; font-size:.70rem; line-height:1.15; }
+        .day .status { display:block; margin-top:6px; font-size:.62rem; opacity:.65; }
+        .day.current { color:#dbeafe; border-color:rgba(96,165,250,.30); background:var(--blue-soft); }
+        .day.selected { box-shadow:0 0 0 2px rgba(96,165,250,.35); }
+        .day .dot { width:5px; height:5px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:4px; background:#5c625f; }
+        .day.current .dot { background:#60a5fa; }
+        h1 { margin:0 0 4px; font-size:1.05rem; font-weight:500; }
+        .subtitle { margin:0 0 22px; color:var(--muted); font-size:.82rem; }
+        .schedule { border-top:1px solid var(--line); padding-top:22px; }
+        .selected-day { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:16px; }
+        .selected-day strong { font-size:1.2rem; font-weight:500; }
+        .selected-day span { color:var(--muted); font-size:.78rem; }
+        .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 28px; }
+        .field label { display:block; margin-bottom:7px; color:var(--muted); font-size:.78rem; }
+        input[type=time] { width:100%; padding:10px 7px; color:var(--text); background:transparent; border:0; border-bottom:1px solid #686d69; outline:none; font:inherit; font-size:1rem; }
+        .days-off { margin-top:17px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; color:var(--muted); font-size:.78rem; }
+        .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+        button.action { border:1px solid #4a504d; background:transparent; color:#d7dbd8; border-radius:7px; padding:8px 13px; cursor:pointer; }
+        button.action.primary { border-color:rgba(96,165,250,.35); background:var(--blue-soft); color:#dbeafe; }
+        @media (max-width:560px) {
+            .week-header { gap:3px; }
+            .day { min-height:57px; padding:7px 2px; }
+            .day .name { font-size:.61rem; }
+            .day .status { font-size:.54rem; }
+            .grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <nav class="week-header" aria-label="Planeamento semanal" id="weekHeader"></nav>
+
+    <h1>Planeador semanal</h1>
+    <p class="subtitle">Seleciona um dia para consultar ou definir o horário desse dia.</p>
+
+    <section class="schedule" aria-live="polite">
+        <div class="selected-day">
+            <strong id="selectedDayName">Segunda-Feira</strong>
+            <span id="selectedDayHint">Hoje</span>
+        </div>
+
+        <div class="grid">
+            <div class="field">
+                <label for="start">Início do trabalho</label>
+                <input id="start" type="time" value="09:00">
+            </div>
+            <div class="field">
+                <label for="exit">Hora de saída</label>
+                <input id="exit" type="time" value="17:00">
+            </div>
+            <div class="field">
+                <label for="lunchStart">Início do almoço</label>
+                <input id="lunchStart" type="time" value="12:00">
+            </div>
+            <div class="field">
+                <label for="lunchEnd">Fim do almoço</label>
+                <input id="lunchEnd" type="time" value="13:00">
+            </div>
+        </div>
+
+        <div class="days-off" id="dayStatus">Exemplo de horário configurado. Nesta proposta, o domingo é tratado como dia sem horário.</div>
+        <div class="actions">
+            <button class="action" id="copyWeek">Reutilizar horário</button>
+            <button class="action primary" id="saveDay">Guardar dia</button>
+        </div>
+    </section>
+</main>
+<script>
+    const days = [
+        ['Segunda-Feira',1], ['Terça-Feira',2], ['Quarta-Feira',3], ['Quinta-Feira',4],
+        ['Sexta-Feira',5], ['Sábado',6], ['Domingo',0]
+    ];
+    const schedules = {
+        1:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
+        2:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
+        3:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
+        4:{start:'09:00',exit:'17:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Horário normal'},
+        5:{start:'09:00',exit:'16:00',lunchStart:'12:00',lunchEnd:'13:00',status:'Saída antecipada'},
+        6:{start:'',exit:'',lunchStart:'',lunchEnd:'',status:'Sem horário definido'},
+        0:{start:'',exit:'',lunchStart:'',lunchEnd:'',status:'Dia sem horário'}
+    };
+    const currentDay = new Date().getDay();
+    let selectedDay = currentDay === 0 ? 1 : currentDay;
+    const header = document.getElementById('weekHeader');
+    const selectedName = document.getElementById('selectedDayName');
+    const selectedHint = document.getElementById('selectedDayHint');
+    const status = document.getElementById('dayStatus');
+    const fields = ['start','exit','lunchStart','lunchEnd'].map(id => document.getElementById(id));
+
+    function renderHeader() {
+        header.innerHTML='';
+        days.forEach(([name, id]) => {
+            const button=document.createElement('button');
+            button.className='day' + (id===currentDay?' current':'') + (id===selectedDay?' selected':'');
+            const hasSchedule=Boolean(schedules[id].exit);
+            button.innerHTML=`<span class="name">${name}</span><span class="status"><span class="dot"></span>${hasSchedule?schedules[id].exit:'—'}</span>`;
+            button.addEventListener('click',()=>{ selectedDay=id; loadDay(); renderHeader(); });
+            header.appendChild(button);
+        });
+    }
+
+    function loadDay() {
+        const data=schedules[selectedDay];
+        selectedName.textContent=days.find(d=>d[1]===selectedDay)[0];
+        selectedHint.textContent=selectedDay===currentDay?'Hoje':(data.exit?'Horário planeado':'Sem horário');
+        fields.forEach((field,i)=>field.value=data[['start','exit','lunchStart','lunchEnd'][i]]||'');
+        status.textContent=data.status + (selectedDay===currentDay?' · dia atual':'');
+    }
+
+    fields.forEach(field=>field.addEventListener('change',()=>{
+        schedules[selectedDay][field.id]=field.value;
+        schedules[selectedDay].status=field.value?'Horário configurado':'Sem horário definido';
+        renderHeader();
+        loadDay();
+    }));
+
+    document.getElementById('copyWeek').addEventListener('click',()=>{
+        const source=schedules[selectedDay];
+        const targets=[1,2,3,4,5].filter(day=>day!==selectedDay);
+        targets.forEach(day=>schedules[day]={...source});
+        renderHeader();
+    });
+
+    document.getElementById('saveDay').addEventListener('click',()=>{
+        status.textContent='Alterações guardadas para este dia (protótipo).';
+    });
+
+    renderHeader();
+    loadDay();
+</script>
+</body>
+</html>
