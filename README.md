@@ -15,7 +15,7 @@ Um contador minimalista para acompanhar o tempo de trabalho até à hora de saí
 
 ## Como utilizar
 
-1. Abre `countdown2-refatorado.html` num navegador.
+1. Abre `conta-turno.html` num navegador.
 2. Define a hora de saída e, se necessário, o intervalo de almoço.
 3. Deixa a página aberta: a contagem é atualizada a cada segundo.
 
