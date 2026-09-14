@@ -16,6 +16,18 @@
             color: #ececea;
         }
         .container { width: min(90%, 460px); text-align: center; }
+        .weekdays {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 34px;
+            font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+            font-size: .78rem;
+            font-weight: 500;
+            letter-spacing: .02em;
+        }
+        .weekday { color: #666b68; opacity: .55; }
+        .weekday.active { color: #ececea; opacity: 1; }
         h1 { margin: 0 0 8px; font-size: 1rem; font-weight: 500; color: #a6aaa7; }
         .config-box {
             display: grid;
@@ -48,6 +60,16 @@
 </head>
 <body>
     <main class="container">
+        <nav class="weekdays" id="weekdays" aria-label="Dias da semana">
+            <span class="weekday" data-day="1">SEG</span>
+            <span class="weekday" data-day="2">TER</span>
+            <span class="weekday" data-day="3">QUA</span>
+            <span class="weekday" data-day="4">QUI</span>
+            <span class="weekday" data-day="5">SEX</span>
+            <span class="weekday" data-day="6">SÁB</span>
+            <span class="weekday" data-day="0">DOM</span>
+        </nav>
+
         <h1 id="title-display">conta-turno</h1>
         <div id="countdown">00:00:00</div>
         <div id="lunch-info" class="info-text"></div>
@@ -76,6 +98,13 @@
         const countdownElement = document.getElementById('countdown');
         const titleDisplay = document.getElementById('title-display');
         const lunchInfoElement = document.getElementById('lunch-info');
+
+        function highlightCurrentWeekday() {
+            const currentDay = new Date().getDay();
+            document.querySelectorAll('.weekday').forEach(day => {
+                day.classList.toggle('active', Number(day.dataset.day) === currentDay);
+            });
+        }
 
         function loadSavedTime(input, storageKey) {
             const savedTime = localStorage.getItem(storageKey);
@@ -167,9 +196,12 @@
             });
         });
 
+        highlightCurrentWeekday();
         updateCountdown();
-        setInterval(updateCountdown, 1000);
+        setInterval(() => {
+            highlightCurrentWeekday();
+            updateCountdown();
+        }, 1000);
     </script>
 </body>
 </html>
-
