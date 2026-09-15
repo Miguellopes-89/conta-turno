@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContaTurno</title>
+    <title>conta-turno</title>
     <style>
         body {
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -17,6 +17,19 @@
         }
         .container { width: min(90%, 460px); text-align: center; }
         h1 { margin: 0 0 8px; font-size: 1rem; font-weight: 500; color: #a6aaa7; }
+        .weekdays {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 10px 0 24px;
+            padding: 0;
+            list-style: none;
+            font-size: .7rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: #686d69;
+        }
+        .weekdays .today { color: #ececea; font-weight: 600; }
         .config-box {
             display: grid;
             gap: 14px;
@@ -48,7 +61,8 @@
 </head>
 <body>
     <main class="container">
-        <h1 id="title-display">ContaTurno</h1>
+        <h1 id="title-display">conta-turno</h1>
+        <ul id="weekdays" class="weekdays" aria-label="Dias da semana"></ul>
         <div id="countdown">00:00:00</div>
         <div id="lunch-info" class="info-text"></div>
 
@@ -73,6 +87,7 @@
             lunchStart: document.getElementById('lunchStartInput'),
             lunchEnd: document.getElementById('lunchEndInput')
         };
+        const weekdaysElement = document.getElementById('weekdays');
         const countdownElement = document.getElementById('countdown');
         const titleDisplay = document.getElementById('title-display');
         const lunchInfoElement = document.getElementById('lunch-info');
@@ -104,14 +119,29 @@
         function showInvalidLunch() {
             countdownElement.classList.remove('finished', 'lunch');
             countdownElement.textContent = '—';
-            titleDisplay.textContent = 'ContaTurno · verifica o almoço';
+            titleDisplay.textContent = 'conta-turno · verifica o almoço';
             lunchInfoElement.textContent = 'O fim do almoço tem de ser posterior ao início.';
             lunchInfoElement.classList.add('error');
             document.title = 'Horário de almoço inválido';
         }
 
+        let renderedDateString = null;
+
+        function renderWeekdays(now) {
+            const currentDateString = now.toDateString();
+            if (currentDateString === renderedDateString) return;
+            renderedDateString = currentDateString;
+
+            const dayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const todayIndex = (now.getDay() + 6) % 7; // 0 = Segunda, 6 = Domingo
+            weekdaysElement.innerHTML = dayLabels
+                .map((label, index) => `<li${index === todayIndex ? ' class="today"' : ''}>${label}</li>`)
+                .join('');
+        }
+
         function updateCountdown() {
             const now = new Date();
+            renderWeekdays(now);
             const exitTime = timeToday(inputs.exit.value);
             const lunchStartTime = timeToday(inputs.lunchStart.value);
             const lunchEndTime = timeToday(inputs.lunchEnd.value);
@@ -130,7 +160,7 @@
                 const message = 'Hora de ir embora! 🎉';
                 countdownElement.textContent = message;
                 countdownElement.classList.add('finished');
-                titleDisplay.textContent = 'ContaTurno · trabalho concluído!';
+                titleDisplay.textContent = 'conta-turno · trabalho concluído!';
                 document.title = message;
                 return;
             }
@@ -139,7 +169,7 @@
                 const message = 'Em pausa para almoço 🥪';
                 countdownElement.textContent = message;
                 countdownElement.classList.add('lunch');
-                titleDisplay.textContent = 'ContaTurno · intervalo';
+                titleDisplay.textContent = 'conta-turno · intervalo';
                 document.title = message;
                 return;
             }
@@ -148,7 +178,7 @@
             if (now < lunchStartTime) remainingWorkTime -= lunchDuration;
 
             const timeString = formatDuration(remainingWorkTime);
-            titleDisplay.textContent = `ContaTurno · saída às ${inputs.exit.value}`;
+            titleDisplay.textContent = `conta-turno · saída às ${inputs.exit.value}`;
             countdownElement.textContent = timeString;
             document.title = `⏱️ ${timeString} restantes`;
         }
@@ -167,8 +197,16 @@
             });
         });
 
+        function scheduleNextTick() {
+            const driftMs = Date.now() % 1000;
+            setTimeout(() => {
+                updateCountdown();
+                scheduleNextTick();
+            }, 1000 - driftMs);
+        }
+
         updateCountdown();
-        setInterval(updateCountdown, 1000);
+        scheduleNextTick();
     </script>
 </body>
 </html>
